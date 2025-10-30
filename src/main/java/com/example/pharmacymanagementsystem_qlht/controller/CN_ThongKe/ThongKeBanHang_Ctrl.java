@@ -1,6 +1,7 @@
 package com.example.pharmacymanagementsystem_qlht.controller.CN_ThongKe;
 
 // Imports cho việc xuất file
+import com.example.pharmacymanagementsystem_qlht.view.CN_ThongKe.ThongKeBanHang_View;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,6 +27,8 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.io.font.constants.StandardFonts;
+
+// Imports logic
 import java.text.DecimalFormat;
 import javafx.scene.control.TableCell;
 import com.example.pharmacymanagementsystem_qlht.dao.ThongKe_Dao;
@@ -34,188 +37,113 @@ import com.example.pharmacymanagementsystem_qlht.model.ThongKeSanPham;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import java.time.LocalDate;
-import javafx.scene.chart.BarChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.event.ActionEvent;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
-import javafx.scene.chart.CategoryAxis;
-import java.net.URL;
-import java.util.ResourceBundle;
 
-public class ThongKeBanHang_Ctrl extends Application implements Initializable {
+// Xóa: @FXML, FXMLLoader, Initializable, URL, ResourceBundle
 
-    // --- 1. KHAI BÁO THÀNH PHẦN GIAO DIỆN (FXML) ---
-    @FXML
-    private Button btnBang;
-    @FXML
-    private Button btnBieuDo;
-    @FXML
-    private Button btnXuat;
-    @FXML
-    private ComboBox<String> cboThoiGian;
-    @FXML
-    private ComboBox<String> cboXuatfile;
-    @FXML
-    private BarChart<String, Number> chartDoanhThu;
-    @FXML
-    private ToggleGroup date;
+public class ThongKeBanHang_Ctrl extends Application {
 
-    @FXML
-    private Label lblTu;
+    // --- 1. KHAI BÁO VIEW ---
+    private ThongKeBanHang_View view;
 
-    @FXML
-    private DatePicker dateTu;
-
-    @FXML
-    private Label lblDen;
-
-    @FXML
-    private DatePicker dateDen;
-
-    @FXML
-    private TableView<ThongKeBanHang> tableDoanhThu;
-    @FXML
-    private TableColumn<ThongKeBanHang, String> cotTG;
-    @FXML
-    private TableColumn<ThongKeBanHang, Integer> cotSLHoaDon;
-    @FXML
-    private TableColumn<ThongKeBanHang, Double> cotTongGT;
-    @FXML
-    private TableColumn<ThongKeBanHang, Double> cotGG;
-    @FXML
-    private TableColumn<ThongKeBanHang, Integer> cotDT; // Số lượng đơn trả
-    @FXML
-    private TableColumn<ThongKeBanHang, Double> cotGTDonTra;
-    @FXML
-    private TableColumn<ThongKeBanHang, Double> cotDoanhThu;
-    @FXML
-    private CategoryAxis xAxis;
-
-
-    @FXML
-    private TableView<ThongKeSanPham> tableTopSanPham;
-    @FXML
-    private TableColumn<ThongKeSanPham, String> cotMaThuoc;
-    @FXML
-    private TableColumn<ThongKeSanPham, String> cotTenThuoc;
-    @FXML
-    private TableColumn<ThongKeSanPham, Integer> cotSL;
-    @FXML
-    private TableColumn<ThongKeSanPham, Double> cotThanhTien;
-
+    // --- 2. CÁC BIẾN LOGIC (GIỮ NGUYÊN) ---
     private ThongKe_Dao tkDao = new ThongKe_Dao();
     private ObservableList<ThongKeBanHang> listThongKe;
     private ObservableList<ThongKeSanPham> listTopSanPham;
 
 
-    // --- 2. KHỞI TẠO (INITIALIZE) ---
+    // --- 3. HÀM START (SỬA ĐỔI) ---
     @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        btnXuat.setOnAction(e-> xuatFile(e));
-        chartDoanhThu.managedProperty().bind(chartDoanhThu.visibleProperty());
-        tableDoanhThu.managedProperty().bind(tableDoanhThu.visibleProperty());
+    public void start(Stage stage) throws Exception {
+        // 1. Khởi tạo View
+        view = new ThongKeBanHang_View();
+
+        // 2. Dựng giao diện từ View
+        Parent root = view.createContent();
+
+        // 3. Gọi hàm setup logic (thay thế cho initialize)
+        setupLogic();
+
+        // 4. Tạo Scene và tải CSS (Lấy từ hàm start cũ)
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("/com/example/pharmacymanagementsystem_qlht/css/ThongKeBanHang.css").toExternalForm());
+
+        // 5. Hiển thị
+        stage.setScene(scene);
+        stage.show();
+    }
+
+
+    // --- 4. HÀM SETUP LOGIC (ĐỔI TÊN TỪ initialize) ---
+    private void setupLogic() {
+        // Gắn sự kiện (truy cập qua 'view.')
+        view.btnXuat.setOnAction(e -> xuatFile(e));
+        view.btnBang.setOnAction(e -> hienThiBang(e));
+        view.btnBieuDo.setOnAction(e -> hienThiBieuDo(e));
+
+        // Binding
+        view.chartDoanhThu.managedProperty().bind(view.chartDoanhThu.visibleProperty());
+        view.tableDoanhThu.managedProperty().bind(view.tableDoanhThu.visibleProperty());
+
         DecimalFormat formatter = new DecimalFormat("#,##0");
-        cboThoiGian.getItems().addAll("Hôm nay", "Tuần này", "Tháng này", "Năm Nay", "Tùy chọn");
-        cboXuatfile.getItems().addAll("Excel", "PDF");
 
+        // Setup ComboBoxes
+        view.cboThoiGian.getItems().addAll("Hôm nay", "Tuần này", "Tháng này", "Năm Nay", "Tùy chọn");
+        view.cboXuatfile.getItems().addAll("Excel", "PDF");
 
-        cotTG.setCellValueFactory(new PropertyValueFactory<>("thoiGian"));
-        cotSLHoaDon.setCellValueFactory(new PropertyValueFactory<>("soLuongHoaDon"));
-        cotTongGT.setCellValueFactory(new PropertyValueFactory<>("tongGiaTri"));
-        cotTongGT.setCellFactory(col -> new TableCell<ThongKeBanHang, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null); // Không hiển thị gì nếu ô rỗng
-                } else {
-                    // Dùng formatter để định dạng số và hiển thị
-                    setText(formatter.format(item));
-                }
-            }
-        });
-        cotGG.setCellValueFactory(new PropertyValueFactory<>("giamGia"));
-        cotGG.setCellFactory(col -> new TableCell<ThongKeBanHang, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(formatter.format(item));
-                }
-            }
-        });
-        cotDT.setCellValueFactory(new PropertyValueFactory<>("soLuongDonTra"));
-        cotGTDonTra.setCellValueFactory(new PropertyValueFactory<>("giaTriDonTra"));
-        cotGTDonTra.setCellFactory(col -> new TableCell<ThongKeBanHang, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(formatter.format(item));
-                }
-            }
-        });
-        cotDoanhThu.setCellValueFactory(new PropertyValueFactory<>("doanhThu"));
-        cotDoanhThu.setCellFactory(col -> new TableCell<ThongKeBanHang, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(formatter.format(item));
-                }
-            }
-        });
+        // --- Setup Bảng Doanh Thu ---
+        view.cotTG.setCellValueFactory(new PropertyValueFactory<>("thoiGian"));
+        view.cotSLHoaDon.setCellValueFactory(new PropertyValueFactory<>("soLuongHoaDon"));
 
+        view.cotTongGT.setCellValueFactory(new PropertyValueFactory<>("tongGiaTri"));
+        view.cotTongGT.setCellFactory(col -> createFormattedCell(formatter));
 
-        cotMaThuoc.setCellValueFactory(new PropertyValueFactory<>("maThuoc"));
-        cotTenThuoc.setCellValueFactory(new PropertyValueFactory<>("tenThuoc"));
-        cotSL.setCellValueFactory(new PropertyValueFactory<>("soLuong"));
-        cotThanhTien.setCellValueFactory(new PropertyValueFactory<>("thanhTien"));
-        cotThanhTien.setCellFactory(col -> new TableCell<ThongKeSanPham, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(formatter.format(item));
-                }
-            }
-        });
+        view.cotGG.setCellValueFactory(new PropertyValueFactory<>("giamGia"));
+        view.cotGG.setCellFactory(col -> createFormattedCell(formatter));
 
-        lblTu.setVisible(false);
-        dateTu.setVisible(false);
-        lblDen.setVisible(false);
-        dateDen.setVisible(false);
+        view.cotDT.setCellValueFactory(new PropertyValueFactory<>("soLuongDonTra"));
 
-        lblTu.managedProperty().bind(lblTu.visibleProperty());
-        dateTu.managedProperty().bind(dateTu.visibleProperty());
-        lblDen.managedProperty().bind(lblDen.visibleProperty());
-        dateDen.managedProperty().bind(dateDen.visibleProperty());
+        view.cotGTDonTra.setCellValueFactory(new PropertyValueFactory<>("giaTriDonTra"));
+        view.cotGTDonTra.setCellFactory(col -> createFormattedCell(formatter));
 
+        view.cotDoanhThu.setCellValueFactory(new PropertyValueFactory<>("doanhThu"));
+        view.cotDoanhThu.setCellFactory(col -> createFormattedCell(formatter));
 
-        cboThoiGian.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
+        // --- Setup Bảng Top Sản Phẩm ---
+        view.cotMaThuoc.setCellValueFactory(new PropertyValueFactory<>("maThuoc"));
+        view.cotTenThuoc.setCellValueFactory(new PropertyValueFactory<>("tenThuoc"));
+        view.cotSL.setCellValueFactory(new PropertyValueFactory<>("soLuong"));
+
+        view.cotThanhTien.setCellValueFactory(new PropertyValueFactory<>("thanhTien"));
+        view.cotThanhTien.setCellFactory(col -> createFormattedCell(formatter));
+
+        // --- Setup ẩn/hiện DatePicker ---
+        view.lblTu.setVisible(false);
+        view.dateTu.setVisible(false);
+        view.lblDen.setVisible(false);
+        view.dateDen.setVisible(false);
+
+        view.lblTu.managedProperty().bind(view.lblTu.visibleProperty());
+        view.dateTu.managedProperty().bind(view.dateTu.visibleProperty());
+        view.lblDen.managedProperty().bind(view.lblDen.visibleProperty());
+        view.dateDen.managedProperty().bind(view.dateDen.visibleProperty());
+
+        // --- Gắn Listeners ---
+        view.cboThoiGian.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
             if (newValue != null) {
                 boolean isCustom = newValue.equals("Tùy chọn");
 
-                lblTu.setVisible(isCustom);
-                dateTu.setVisible(isCustom);
-                lblDen.setVisible(isCustom);
-                dateDen.setVisible(isCustom);
+                view.lblTu.setVisible(isCustom);
+                view.dateTu.setVisible(isCustom);
+                view.lblDen.setVisible(isCustom);
+                view.dateDen.setVisible(isCustom);
 
                 if (isCustom) {
                     attemptAutoLoadTuyChon();
@@ -225,40 +153,48 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
             }
         });
 
+        view.dateTu.valueProperty().addListener((options, oldValue, newValue) -> attemptAutoLoadTuyChon());
+        view.dateDen.valueProperty().addListener((options, oldValue, newValue) -> attemptAutoLoadTuyChon());
 
-        dateTu.valueProperty().addListener((options, oldValue, newValue) -> {
-            attemptAutoLoadTuyChon();
-        });
-
-
-        dateDen.valueProperty().addListener((options, oldValue, newValue) -> {
-            attemptAutoLoadTuyChon();
-        });
-
-
-        cboThoiGian.setValue("Hôm nay");
-        chartDoanhThu.setAnimated(false);
+        // --- Tải dữ liệu ban đầu ---
+        view.cboThoiGian.setValue("Hôm nay");
+        view.chartDoanhThu.setAnimated(false);
     }
 
+    /**
+     * Hàm trợ giúp tạo Cell định dạng số
+     */
+    private <T> TableCell<T, Double> createFormattedCell(DecimalFormat formatter) {
+        return new TableCell<T, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        };
+    }
+
+    // --- 5. CÁC HÀM LOGIC (SỬA ĐỔI ĐỂ DÙNG 'view.') ---
 
     private void loadData(String thoiGian) {
-        // Lấy dữ liệu
         listTopSanPham = FXCollections.observableArrayList(tkDao.getTop5SanPham(thoiGian));
         listThongKe = FXCollections.observableArrayList(tkDao.getThongKeBanHang(thoiGian));
 
-        tableTopSanPham.setItems(listTopSanPham);
-        tableDoanhThu.setItems(listThongKe);
+        view.tableTopSanPham.setItems(listTopSanPham);
+        view.tableDoanhThu.setItems(listThongKe);
 
-        // ⚠️ Bắt buộc: reset cả dữ liệu và category trước
-        chartDoanhThu.getData().clear();
-        if (xAxis != null) {
-            xAxis.getCategories().clear();
+        view.chartDoanhThu.getData().clear();
+        if (view.xAxis != null) {
+            view.xAxis.getCategories().clear();
         }
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Doanh thu");
 
-        // Danh mục mới
         ObservableList<String> categories = FXCollections.observableArrayList();
         for (ThongKeBanHang tk : listThongKe) {
             String label = tk.getThoiGian();
@@ -266,38 +202,32 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
             series.getData().add(new XYChart.Data<>(label, tk.getDoanhThu()));
         }
 
-        chartDoanhThu.getData().add(series);
+        view.chartDoanhThu.getData().add(series);
+        view.xAxis.setCategories(categories);
 
-        // ⚡ Đặt category sau khi đã add series để đồng bộ
-        xAxis.setCategories(categories);
+        view.chartDoanhThu.setVisible(false);
+        view.tableDoanhThu.setVisible(true);
 
-        chartDoanhThu.setVisible(false);
-        tableDoanhThu.setVisible(true);
-
-        // Xoay nhãn
-        xAxis.setTickLabelRotation(-20);
+        view.xAxis.setTickLabelRotation(-20);
     }
 
-
-
     private void attemptAutoLoadTuyChon() {
-        // 1. Chỉ thực thi nếu ComboBox đang là "Tùy chọn"
-        String selectedTime = cboThoiGian.getValue();
+        String selectedTime = view.cboThoiGian.getValue();
         if (selectedTime == null || !selectedTime.equals("Tùy chọn")) {
             return;
         }
 
-        LocalDate tuNgay = dateTu.getValue();
-        LocalDate denNgay = dateDen.getValue();
+        LocalDate tuNgay = view.dateTu.getValue();
+        LocalDate denNgay = view.dateDen.getValue();
 
         if (tuNgay == null || denNgay == null) {
             return;
         }
         if (tuNgay.isAfter(denNgay)) {
             System.out.println("Ngày bắt đầu không thể sau ngày kết thúc");
-            tableDoanhThu.getItems().clear();
-            tableTopSanPham.getItems().clear();
-            chartDoanhThu.getData().clear();
+            view.tableDoanhThu.getItems().clear();
+            view.tableTopSanPham.getItems().clear();
+            view.chartDoanhThu.getData().clear();
             return;
         }
         loadDataTuyChon(tuNgay, denNgay);
@@ -308,10 +238,10 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
         listTopSanPham = FXCollections.observableArrayList(tkDao.getTop5SanPham_TuyChon(tuNgay, denNgay));
         listThongKe = FXCollections.observableArrayList(tkDao.getThongKeBanHang_TuyChon(tuNgay, denNgay));
 
-        tableTopSanPham.setItems(listTopSanPham);
-        tableDoanhThu.setItems(listThongKe);
+        view.tableTopSanPham.setItems(listTopSanPham);
+        view.tableDoanhThu.setItems(listThongKe);
 
-        chartDoanhThu.getData().clear();
+        view.chartDoanhThu.getData().clear();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Doanh thu (Tùy chọn)");
 
@@ -322,17 +252,17 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
             series.getData().add(new XYChart.Data<>(tg, tk.getDoanhThu()));
         }
 
-        if (xAxis != null) xAxis.setCategories(categories);
-        chartDoanhThu.getData().add(series);
+        if (view.xAxis != null) view.xAxis.setCategories(categories);
+        view.chartDoanhThu.getData().add(series);
 
-        chartDoanhThu.setVisible(false);
-        tableDoanhThu.setVisible(true);
+        view.chartDoanhThu.setVisible(false);
+        view.tableDoanhThu.setVisible(true);
     }
 
+    // --- 6. CÁC HÀM XUẤT FILE (SỬA ĐỔI ĐỂ DÙNG 'view.') ---
 
-    @FXML
     private void xuatFile(ActionEvent event) {
-        String selectedFormat = cboXuatfile.getValue();
+        String selectedFormat = view.cboXuatfile.getValue();
         if (selectedFormat == null) {
             showAlert(Alert.AlertType.WARNING, "Chưa chọn định dạng", "Vui lòng chọn định dạng file (Excel hoặc PDF) để xuất.");
             return;
@@ -349,7 +279,7 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
 
         if (selectedFormat.equals("Excel")) {
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel Files (*.xlsx)", "*.xlsx"));
-            File file = fileChooser.showSaveDialog(btnXuat.getScene().getWindow());
+            File file = fileChooser.showSaveDialog(view.btnXuat.getScene().getWindow());
             if (file != null) {
                 try {
                     xuatExcel(file);
@@ -361,7 +291,7 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
             }
         } else if (selectedFormat.equals("PDF")) {
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files (*.pdf)", "*.pdf"));
-            File file = fileChooser.showSaveDialog(btnXuat.getScene().getWindow());
+            File file = fileChooser.showSaveDialog(view.btnXuat.getScene().getWindow());
             if (file != null) {
                 try {
                     xuatPDF(file);
@@ -382,9 +312,10 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
             CellStyle headerStyle = workbook.createCellStyle();
             headerStyle.setFont(headerFont);
 
+            // Lấy header từ text của cột (qua view)
             String[] headersDT = {
-                    cotTG.getText(), cotSLHoaDon.getText(), cotTongGT.getText(),
-                    cotGG.getText(), cotDT.getText(), cotGTDonTra.getText(), cotDoanhThu.getText()
+                    view.cotTG.getText(), view.cotSLHoaDon.getText(), view.cotTongGT.getText(),
+                    view.cotGG.getText(), view.cotDT.getText(), view.cotGTDonTra.getText(), view.cotDoanhThu.getText()
             };
 
             Row headerRowDT = sheetDT.createRow(0);
@@ -424,13 +355,12 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
 
         PdfFont font;
         try {
-            font = PdfFontFactory.createFont(FONT_PATH );
+            font = PdfFontFactory.createFont(FONT_PATH);
         } catch (IOException e) {
             System.err.println("Không tìm thấy font tại: " + FONT_PATH + ". Sử dụng font mặc định.");
             font = PdfFontFactory.createFont(StandardFonts.HELVETICA);
         }
         document.setFont(font);
-
 
         document.add(new Paragraph("BÁO CÁO THỐNG KÊ DOANH THU")
                 .setFontSize(18)
@@ -442,18 +372,18 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
                 .setBold()
                 .setMarginTop(15));
 
-        float[] columnWidthsDT = {2, 1, 1, 1, 1, 1, 1}; // Tỷ lệ độ rộng các cột
+        float[] columnWidthsDT = {2, 1, 1, 1, 1, 1, 1};
         Table tableDT = new Table(UnitValue.createPercentArray(columnWidthsDT));
-        tableDT.setWidth(UnitValue.createPercentValue(100)); // Rộng 100%
+        tableDT.setWidth(UnitValue.createPercentValue(100));
 
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotTG.getText()).setBold()));
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotSLHoaDon.getText()).setBold()));
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotTongGT.getText()).setBold()));
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotGG.getText()).setBold()));
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotDT.getText()).setBold()));
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotGTDonTra.getText()).setBold()));
-        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(cotDoanhThu.getText()).setBold()));
-
+        // Lấy header từ text của cột (qua view)
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotTG.getText()).setBold()));
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotSLHoaDon.getText()).setBold()));
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotTongGT.getText()).setBold()));
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotGG.getText()).setBold()));
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotDT.getText()).setBold()));
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotGTDonTra.getText()).setBold()));
+        tableDT.addHeaderCell(new com.itextpdf.layout.element.Cell().add(new Paragraph(view.cotDoanhThu.getText()).setBold()));
 
         for (ThongKeBanHang tk : listThongKe) {
             tableDT.addCell(tk.getThoiGian());
@@ -477,24 +407,19 @@ public class ThongKeBanHang_Ctrl extends Application implements Initializable {
         alert.showAndWait();
     }
 
-    // --- 3. XỬ LÝ SỰ KIỆN GIAO DIỆN ---
-    @FXML
+    // --- 7. XỬ LÝ SỰ KIỆN GIAO DIỆN (Bỏ @FXML) ---
     private void hienThiBieuDo(ActionEvent event) {
-        chartDoanhThu.setVisible(true);
-        tableDoanhThu.setVisible(false);
+        view.chartDoanhThu.setVisible(true);
+        view.tableDoanhThu.setVisible(false);
     }
 
-    @FXML
     private void hienThiBang(ActionEvent event) {
-        chartDoanhThu.setVisible(false);
-        tableDoanhThu.setVisible(true);
+        view.chartDoanhThu.setVisible(false);
+        view.tableDoanhThu.setVisible(true);
     }
-    @Override
-    public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/com/example/pharmacymanagementsystem_qlht/CN_ThongKe/ThongKeBanHang_GUI.fxml"));
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/com/example/pharmacymanagementsystem_qlht/css/ThongKeBanHang.css").toExternalForm());
-        stage.setScene(scene);
-        stage.show();
+
+    // Hàm main để chạy (nếu cần test)
+    public static void main(String[] args) {
+        launch(args);
     }
 }
